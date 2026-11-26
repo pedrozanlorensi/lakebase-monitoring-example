@@ -1,0 +1,28 @@
+# Lakebase monitoring example: create Lakebase projects with CDF, load test them,
+# and monitor cost, utilization, latency and replication from a single AI/BI dashboard.
+bundle:
+  name: lakebase-monitoring-example
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: Unity Catalog catalog for the monitoring tables and the CDF history tables. Must not use default storage.
+    default: main
+  monitoring_schema:
+    description: Schema (inside the catalog) for the monitoring tables and views.
+    default: lakebase_monitoring
+  project_prefix:
+    description: Prefix of the Lakebase project ids. Projects are named <prefix>-01, <prefix>-02, ...
+    default: lb-monitoring-demo
+  num_projects:
+    description: Number of Lakebase projects to create.
+    default: "5"
+  warehouse_id:
+    description: SQL warehouse used by the dashboard.
+
+targets:
+  dev:
+    default: true
+    mode: development
