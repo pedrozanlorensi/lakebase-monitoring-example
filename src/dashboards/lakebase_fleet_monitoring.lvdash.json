@@ -1,0 +1,1574 @@
+{
+  "datasets": [
+    {
+      "name": "ds_summary",
+      "displayName": "Project summary",
+      "queryLines": [
+        "SELECT * FROM v_project_summary ORDER BY project_id "
+      ]
+    },
+    {
+      "name": "ds_cost",
+      "displayName": "Lakebase cost (system.billing)",
+      "queryLines": [
+        "SELECT * FROM v_lakebase_cost ORDER BY usage_hour "
+      ]
+    },
+    {
+      "name": "ds_billing_status",
+      "displayName": "Billing data status",
+      "queryLines": [
+        "SELECT billing_status FROM v_billing_status "
+      ]
+    },
+    {
+      "name": "ds_compute",
+      "displayName": "Compute samples",
+      "queryLines": [
+        "SELECT * FROM v_compute_samples ORDER BY sampled_at "
+      ]
+    },
+    {
+      "name": "ds_latency_op",
+      "displayName": "Latency by operation",
+      "queryLines": [
+        "SELECT * FROM v_latency_by_op WHERE op <> 'insert_batch' ORDER BY op, project_id "
+      ]
+    },
+    {
+      "name": "ds_latency_ts",
+      "displayName": "Latency over time",
+      "queryLines": [
+        "SELECT * FROM v_latency_timeseries ORDER BY ts "
+      ]
+    },
+    {
+      "name": "ds_cdf_ts",
+      "displayName": "CDF replication latency over time",
+      "queryLines": [
+        "SELECT * FROM v_cdf_timeseries ORDER BY ts "
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "fleet",
+      "displayName": "Fleet monitoring",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Lakebase fleet monitoring\n",
+                "\n",
+                "Storage cost, compute cost, CU utilization, P95 query latency and CDF replication latency across Lakebase projects. Cost comes from system.billing.usage at list price and covers everything billed since each project was created (billing records arrive a few hours after the usage). Utilization, latency and replication show the latest load-test run."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 9,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "filter_project",
+            "queries": [
+              {
+                "name": "q_ds_summary",
+                "query": {
+                  "datasetName": "ds_summary",
+                  "fields": [
+                    {
+                      "name": "project_id",
+                      "expression": "`project_id`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "q_ds_cost",
+                "query": {
+                  "datasetName": "ds_cost",
+                  "fields": [
+                    {
+                      "name": "project_id",
+                      "expression": "`project_id`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "q_ds_compute",
+                "query": {
+                  "datasetName": "ds_compute",
+                  "fields": [
+                    {
+                      "name": "project_id",
+                      "expression": "`project_id`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "q_ds_latency_op",
+                "query": {
+                  "datasetName": "ds_latency_op",
+                  "fields": [
+                    {
+                      "name": "project_id",
+                      "expression": "`project_id`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "q_ds_latency_ts",
+                "query": {
+                  "datasetName": "ds_latency_ts",
+                  "fields": [
+                    {
+                      "name": "project_id",
+                      "expression": "`project_id`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "q_ds_cdf_ts",
+                "query": {
+                  "datasetName": "ds_cdf_ts",
+                  "fields": [
+                    {
+                      "name": "project_id",
+                      "expression": "`project_id`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "project_id",
+                    "displayName": "Project",
+                    "queryName": "q_ds_summary"
+                  },
+                  {
+                    "fieldName": "project_id",
+                    "displayName": "Project",
+                    "queryName": "q_ds_cost"
+                  },
+                  {
+                    "fieldName": "project_id",
+                    "displayName": "Project",
+                    "queryName": "q_ds_compute"
+                  },
+                  {
+                    "fieldName": "project_id",
+                    "displayName": "Project",
+                    "queryName": "q_ds_latency_op"
+                  },
+                  {
+                    "fieldName": "project_id",
+                    "displayName": "Project",
+                    "queryName": "q_ds_latency_ts"
+                  },
+                  {
+                    "fieldName": "project_id",
+                    "displayName": "Project",
+                    "queryName": "q_ds_cdf_ts"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Project"
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_compute",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_summary",
+                  "fields": [
+                    {
+                      "name": "sum(compute_cost_usd)",
+                      "expression": "SUM(`compute_cost_usd`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(compute_cost_usd)",
+                  "displayName": "Compute cost",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 4
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Compute cost",
+                "showDescription": true,
+                "description": "List price, billed so far"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_storage",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_summary",
+                  "fields": [
+                    {
+                      "name": "sum(storage_cost_usd)",
+                      "expression": "SUM(`storage_cost_usd`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(storage_cost_usd)",
+                  "displayName": "Storage cost",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 4
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Storage cost",
+                "showDescription": true,
+                "description": "List price, billed so far"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_util",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_summary",
+                  "fields": [
+                    {
+                      "name": "avg(avg_cu_utilization)",
+                      "expression": "AVG(`avg_cu_utilization`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg(avg_cu_utilization)",
+                  "displayName": "CU utilization",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "CU utilization",
+                "showDescription": true,
+                "description": "Average across projects, latest run"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_p95",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_summary",
+                  "fields": [
+                    {
+                      "name": "max(p95_read_ms)",
+                      "expression": "MAX(`p95_read_ms`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "max(p95_read_ms)",
+                  "displayName": "P95 query latency",
+                  "format": {
+                    "type": "number",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "P95 query latency",
+                "showDescription": true,
+                "description": "ms, reads, slowest project"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_cdf",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_summary",
+                  "fields": [
+                    {
+                      "name": "max(p95_cdf_latency_s)",
+                      "expression": "MAX(`p95_cdf_latency_s`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "max(p95_cdf_latency_s)",
+                  "displayName": "CDF replication latency",
+                  "format": {
+                    "type": "number",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 2
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "CDF replication latency",
+                "showDescription": true,
+                "description": "P95 seconds, slowest project"
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_rows",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_summary",
+                  "fields": [
+                    {
+                      "name": "sum(rows_ingested)",
+                      "expression": "SUM(`rows_ingested`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(rows_ingested)",
+                  "displayName": "Rows ingested",
+                  "format": {
+                    "type": "number",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 0
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Rows ingested",
+                "showDescription": true,
+                "description": "Latest run, all projects"
+              }
+            }
+          },
+          "position": {
+            "x": 10,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "h_cost",
+            "multilineTextboxSpec": {
+              "lines": [
+                "### Cost (system.billing, list price)\n"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "billing_status",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_billing_status",
+                  "fields": [
+                    {
+                      "name": "billing_status",
+                      "expression": "`billing_status`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "billing_status",
+                    "displayName": "Billing data status"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": false
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 12,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "compute_cost",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_summary",
+                  "fields": [
+                    {
+                      "name": "project_id",
+                      "expression": "`project_id`"
+                    },
+                    {
+                      "name": "sum(compute_cost_usd)",
+                      "expression": "SUM(`compute_cost_usd`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "project_id",
+                  "displayName": "Project",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(compute_cost_usd)",
+                  "displayName": "Compute cost ($)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 4
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "project_id",
+                  "displayName": "Project",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Compute cost by project",
+                "showDescription": true,
+                "description": "DBUs billed × list price, since project creation"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "storage_cost",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_summary",
+                  "fields": [
+                    {
+                      "name": "project_id",
+                      "expression": "`project_id`"
+                    },
+                    {
+                      "name": "sum(storage_cost_usd)",
+                      "expression": "SUM(`storage_cost_usd`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "project_id",
+                  "displayName": "Project",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(storage_cost_usd)",
+                  "displayName": "Storage cost ($)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 4
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "project_id",
+                  "displayName": "Project",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Storage cost by project",
+                "showDescription": true,
+                "description": "DSUs billed × list price, since project creation"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 8,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "cost_hourly",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_cost",
+                  "fields": [
+                    {
+                      "name": "usage_hour",
+                      "expression": "`usage_hour`"
+                    },
+                    {
+                      "name": "cost_type",
+                      "expression": "`cost_type`"
+                    },
+                    {
+                      "name": "sum(list_cost_usd)",
+                      "expression": "SUM(`list_cost_usd`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "usage_hour",
+                  "displayName": "Hour",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(list_cost_usd)",
+                  "displayName": "Cost ($)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 4
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "cost_type",
+                  "displayName": "Cost type",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Hourly cost by type",
+                "showDescription": true,
+                "description": "Compute and storage, all selected projects"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 13,
+            "width": 12,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "h_compute",
+            "multilineTextboxSpec": {
+              "lines": [
+                "### Compute\n"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 18,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "cu_util",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_compute",
+                  "fields": [
+                    {
+                      "name": "sampled_at",
+                      "expression": "`sampled_at`"
+                    },
+                    {
+                      "name": "project_id",
+                      "expression": "`project_id`"
+                    },
+                    {
+                      "name": "avg(cu_utilization)",
+                      "expression": "AVG(`cu_utilization`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "sampled_at",
+                  "displayName": "Time",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg(cu_utilization)",
+                  "displayName": "CU utilization",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "project_id",
+                  "displayName": "Project",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "CU utilization over time",
+                "showDescription": true,
+                "description": "Database load ÷ allocated vCPUs, capped at 100%"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 19,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "db_load",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_compute",
+                  "fields": [
+                    {
+                      "name": "sampled_at",
+                      "expression": "`sampled_at`"
+                    },
+                    {
+                      "name": "project_id",
+                      "expression": "`project_id`"
+                    },
+                    {
+                      "name": "avg(db_load)",
+                      "expression": "AVG(`db_load`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "sampled_at",
+                  "displayName": "Time",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg(db_load)",
+                  "displayName": "Busy sessions",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "format": {
+                    "type": "number",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 2
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "project_id",
+                  "displayName": "Project",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Database load over time",
+                "showDescription": true,
+                "description": "Seconds of statement execution per second (busy sessions)"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 19,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "h_latency",
+            "multilineTextboxSpec": {
+              "lines": [
+                "### Query latency\n"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 24,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "p95_by_op",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_latency_op",
+                  "fields": [
+                    {
+                      "name": "op",
+                      "expression": "`op`"
+                    },
+                    {
+                      "name": "project_id",
+                      "expression": "`project_id`"
+                    },
+                    {
+                      "name": "max(p95_ms)",
+                      "expression": "MAX(`p95_ms`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "op",
+                  "displayName": "Operation",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "max(p95_ms)",
+                  "displayName": "P95 latency (ms)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "format": {
+                    "type": "number",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "project_id",
+                  "displayName": "Project",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "P95 latency by operation",
+                "showDescription": true,
+                "description": "Client-side, single-statement operations"
+              },
+              "mark": {
+                "layout": "group"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 25,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "p95_ts",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_latency_ts",
+                  "fields": [
+                    {
+                      "name": "ts",
+                      "expression": "`ts`"
+                    },
+                    {
+                      "name": "project_id",
+                      "expression": "`project_id`"
+                    },
+                    {
+                      "name": "max(p95_ms)",
+                      "expression": "MAX(`p95_ms`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "ts",
+                  "displayName": "Time",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "max(p95_ms)",
+                  "displayName": "P95 latency (ms)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "format": {
+                    "type": "number",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "project_id",
+                  "displayName": "Project",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "P95 latency over time",
+                "showDescription": true,
+                "description": "5-second buckets, reads, updates and deletes"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 25,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "h_cdf",
+            "multilineTextboxSpec": {
+              "lines": [
+                "### CDF replication\n"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 30,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "cdf_p95_ts",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_cdf_ts",
+                  "fields": [
+                    {
+                      "name": "ts",
+                      "expression": "`ts`"
+                    },
+                    {
+                      "name": "project_id",
+                      "expression": "`project_id`"
+                    },
+                    {
+                      "name": "max(p95_latency_s)",
+                      "expression": "MAX(`p95_latency_s`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "ts",
+                  "displayName": "Time",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "max(p95_latency_s)",
+                  "displayName": "P95 latency (s)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "format": {
+                    "type": "number",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 2
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "project_id",
+                  "displayName": "Project",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "CDF replication latency over time",
+                "showDescription": true,
+                "description": "Postgres commit → change processed by Lakehouse Sync, 5-second buckets"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 31,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "cdf_lag",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_compute",
+                  "fields": [
+                    {
+                      "name": "sampled_at",
+                      "expression": "`sampled_at`"
+                    },
+                    {
+                      "name": "project_id",
+                      "expression": "`project_id`"
+                    },
+                    {
+                      "name": "max(cdf_lag_mb)",
+                      "expression": "MAX(`cdf_lag_mb`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "sampled_at",
+                  "displayName": "Time",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "max(cdf_lag_mb)",
+                  "displayName": "WAL lag (MB)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "format": {
+                    "type": "number",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "project_id",
+                  "displayName": "Project",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "CDF backlog over time",
+                "showDescription": true,
+                "description": "WAL not yet committed by Lakehouse Sync"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 31,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "h_detail",
+            "multilineTextboxSpec": {
+              "lines": [
+                "### Project detail\n"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 36,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "detail_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_summary",
+                  "fields": [
+                    {
+                      "name": "project_id",
+                      "expression": "`project_id`"
+                    },
+                    {
+                      "name": "compute_cost_usd",
+                      "expression": "`compute_cost_usd`"
+                    },
+                    {
+                      "name": "storage_cost_usd",
+                      "expression": "`storage_cost_usd`"
+                    },
+                    {
+                      "name": "compute_dbus",
+                      "expression": "`compute_dbus`"
+                    },
+                    {
+                      "name": "storage_dsus",
+                      "expression": "`storage_dsus`"
+                    },
+                    {
+                      "name": "billed_through",
+                      "expression": "`billed_through`"
+                    },
+                    {
+                      "name": "storage_gb",
+                      "expression": "`storage_gb`"
+                    },
+                    {
+                      "name": "avg_cu_utilization",
+                      "expression": "`avg_cu_utilization`"
+                    },
+                    {
+                      "name": "peak_db_load",
+                      "expression": "`peak_db_load`"
+                    },
+                    {
+                      "name": "p95_read_ms",
+                      "expression": "`p95_read_ms`"
+                    },
+                    {
+                      "name": "p95_update_ms",
+                      "expression": "`p95_update_ms`"
+                    },
+                    {
+                      "name": "p95_insert_batch_ms",
+                      "expression": "`p95_insert_batch_ms`"
+                    },
+                    {
+                      "name": "rows_ingested",
+                      "expression": "`rows_ingested`"
+                    },
+                    {
+                      "name": "cdf_events",
+                      "expression": "`cdf_events`"
+                    },
+                    {
+                      "name": "p95_cdf_latency_s",
+                      "expression": "`p95_cdf_latency_s`"
+                    },
+                    {
+                      "name": "max_cdf_latency_s",
+                      "expression": "`max_cdf_latency_s`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "project_id",
+                    "displayName": "Project"
+                  },
+                  {
+                    "fieldName": "compute_cost_usd",
+                    "displayName": "Compute cost ($)",
+                    "format": {
+                      "type": "number-currency",
+                      "currencyCode": "USD",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 4
+                      }
+                    }
+                  },
+                  {
+                    "fieldName": "storage_cost_usd",
+                    "displayName": "Storage cost ($)",
+                    "format": {
+                      "type": "number-currency",
+                      "currencyCode": "USD",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 4
+                      }
+                    }
+                  },
+                  {
+                    "fieldName": "compute_dbus",
+                    "displayName": "Compute DBUs",
+                    "format": {
+                      "type": "number",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 3
+                      }
+                    }
+                  },
+                  {
+                    "fieldName": "storage_dsus",
+                    "displayName": "Storage DSUs",
+                    "format": {
+                      "type": "number",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 4
+                      }
+                    }
+                  },
+                  {
+                    "fieldName": "billed_through",
+                    "displayName": "Billed through"
+                  },
+                  {
+                    "fieldName": "storage_gb",
+                    "displayName": "Logical size (GB)",
+                    "format": {
+                      "type": "number",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 3
+                      }
+                    }
+                  },
+                  {
+                    "fieldName": "avg_cu_utilization",
+                    "displayName": "Avg CU util.",
+                    "format": {
+                      "type": "number-percent",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 1
+                      }
+                    }
+                  },
+                  {
+                    "fieldName": "peak_db_load",
+                    "displayName": "Peak busy sessions",
+                    "format": {
+                      "type": "number",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 2
+                      }
+                    }
+                  },
+                  {
+                    "fieldName": "p95_read_ms",
+                    "displayName": "P95 read (ms)",
+                    "format": {
+                      "type": "number",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 1
+                      }
+                    }
+                  },
+                  {
+                    "fieldName": "p95_update_ms",
+                    "displayName": "P95 update (ms)",
+                    "format": {
+                      "type": "number",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 1
+                      }
+                    }
+                  },
+                  {
+                    "fieldName": "p95_insert_batch_ms",
+                    "displayName": "P95 insert batch (ms)",
+                    "format": {
+                      "type": "number",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 1
+                      }
+                    }
+                  },
+                  {
+                    "fieldName": "rows_ingested",
+                    "displayName": "Rows ingested"
+                  },
+                  {
+                    "fieldName": "cdf_events",
+                    "displayName": "CDF events"
+                  },
+                  {
+                    "fieldName": "p95_cdf_latency_s",
+                    "displayName": "P95 CDF latency (s)",
+                    "format": {
+                      "type": "number",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 2
+                      }
+                    }
+                  },
+                  {
+                    "fieldName": "max_cdf_latency_s",
+                    "displayName": "Max CDF latency (s)",
+                    "format": {
+                      "type": "number",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 2
+                      }
+                    }
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Per-project metrics"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 37,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ]
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "canvasBackgroundColor": {
+        "light": "#FCFCFC",
+        "dark": "#1F272D"
+      },
+      "widgetBackgroundColor": {
+        "light": "#FFFFFF",
+        "dark": "#11171C"
+      },
+      "fontColor": {
+        "light": "#11171C",
+        "dark": "#E8ECF0"
+      },
+      "selectionColor": {
+        "light": "#2272B4",
+        "dark": "#8ACAFF"
+      },
+      "visualizationColors": [
+        "#0072B2",
+        "#E69F00",
+        "#009E73",
+        "#CC79A7",
+        "#D55E00",
+        "#56B4E9",
+        "#7A7A7A"
+      ],
+      "widgetHeaderAlignment": "LEFT"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+resources:
+  jobs:
+    lakebase_monitoring:
+      name: lakebase-monitoring-example
+      description: Creates the Lakebase projects (idempotent), runs the load test and refreshes the monitoring views.
+      tasks:
+        - task_key: create_lakebase_projects
+          notebook_task:
+            notebook_path: ../src/notebooks/01_create_lakebase_projects.py
+            base_parameters:
+              catalog: ${var.catalog}
+              monitoring_schema: ${var.monitoring_schema}
+              project_prefix: ${var.project_prefix}
+              num_projects: ${var.num_projects}
+        - task_key: load_test
+          depends_on:
+            - task_key: create_lakebase_projects
+          notebook_task:
+            notebook_path: ../src/notebooks/02_load_test.py
+            base_parameters:
+              catalog: ${var.catalog}
+              monitoring_schema: ${var.monitoring_schema}
+        - task_key: create_monitoring_views
+          depends_on:
+            - task_key: load_test
+          notebook_task:
+            notebook_path: ../src/notebooks/03_create_monitoring_views.py
+            base_parameters:
+              catalog: ${var.catalog}
+              monitoring_schema: ${var.monitoring_schema}

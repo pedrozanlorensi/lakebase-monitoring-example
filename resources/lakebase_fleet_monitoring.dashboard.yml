@@ -1,0 +1,8 @@
+resources:
+  dashboards:
+    lakebase_fleet_monitoring:
+      display_name: Lakebase fleet monitoring
+      file_path: ../src/dashboards/lakebase_fleet_monitoring.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.monitoring_schema}
