@@ -15,6 +15,13 @@
       ]
     },
     {
+      "name": "ds_billing_status",
+      "displayName": "Billing data status",
+      "queryLines": [
+        "SELECT billing_status FROM v_billing_status "
+      ]
+    },
+    {
       "name": "ds_compute",
       "displayName": "Compute samples",
       "queryLines": [
@@ -240,7 +247,7 @@
                 "showTitle": true,
                 "title": "Compute cost",
                 "showDescription": true,
-                "description": "List price, billed to date"
+                "description": "List price, billed so far"
               }
             }
           },
@@ -290,7 +297,7 @@
                 "showTitle": true,
                 "title": "Storage cost",
                 "showDescription": true,
-                "description": "List price, billed to date"
+                "description": "List price, billed so far"
               }
             }
           },
@@ -516,6 +523,47 @@
         },
         {
           "widget": {
+            "name": "billing_status",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_billing_status",
+                  "fields": [
+                    {
+                      "name": "billing_status",
+                      "expression": "`billing_status`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "billing_status",
+                    "displayName": "Billing data status"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": false
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 12,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
             "name": "compute_cost",
             "queries": [
               {
@@ -580,7 +628,7 @@
           },
           "position": {
             "x": 0,
-            "y": 6,
+            "y": 8,
             "width": 6,
             "height": 5
           }
@@ -651,7 +699,7 @@
           },
           "position": {
             "x": 6,
-            "y": 6,
+            "y": 8,
             "width": 6,
             "height": 5
           }
@@ -726,7 +774,7 @@
           },
           "position": {
             "x": 0,
-            "y": 11,
+            "y": 13,
             "width": 12,
             "height": 5
           }
@@ -742,7 +790,7 @@
           },
           "position": {
             "x": 0,
-            "y": 16,
+            "y": 18,
             "width": 12,
             "height": 1
           }
@@ -816,7 +864,7 @@
           },
           "position": {
             "x": 0,
-            "y": 17,
+            "y": 19,
             "width": 6,
             "height": 5
           }
@@ -890,7 +938,7 @@
           },
           "position": {
             "x": 6,
-            "y": 17,
+            "y": 19,
             "width": 6,
             "height": 5
           }
@@ -906,7 +954,7 @@
           },
           "position": {
             "x": 0,
-            "y": 22,
+            "y": 24,
             "width": 12,
             "height": 1
           }
@@ -983,7 +1031,7 @@
           },
           "position": {
             "x": 0,
-            "y": 23,
+            "y": 25,
             "width": 6,
             "height": 5
           }
@@ -1057,7 +1105,7 @@
           },
           "position": {
             "x": 6,
-            "y": 23,
+            "y": 25,
             "width": 6,
             "height": 5
           }
@@ -1073,7 +1121,7 @@
           },
           "position": {
             "x": 0,
-            "y": 28,
+            "y": 30,
             "width": 12,
             "height": 1
           }
@@ -1147,7 +1195,7 @@
           },
           "position": {
             "x": 0,
-            "y": 29,
+            "y": 31,
             "width": 6,
             "height": 5
           }
@@ -1221,7 +1269,7 @@
           },
           "position": {
             "x": 6,
-            "y": 29,
+            "y": 31,
             "width": 6,
             "height": 5
           }
@@ -1237,7 +1285,7 @@
           },
           "position": {
             "x": 0,
-            "y": 34,
+            "y": 36,
             "width": 12,
             "height": 1
           }
@@ -1485,7 +1533,7 @@
           },
           "position": {
             "x": 0,
-            "y": 35,
+            "y": 37,
             "width": 12,
             "height": 6
           }

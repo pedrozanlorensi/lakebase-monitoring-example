@@ -54,6 +54,7 @@ backlog. Every run appends another 100,000 rows to each project.
 | View | Source | Grain |
 |---|---|---|
 | `v_lakebase_cost` | `system.billing.usage`, `system.billing.list_prices` | project × hour × cost type |
+| `v_billing_status` | `v_lakebase_cost` | one row: how fresh the billing data is |
 | `v_compute_samples` | `metrics_samples` | project × sample |
 | `v_latency_by_op` | `query_latency` | project × operation |
 | `v_latency_timeseries` | `query_latency` | project × 5 seconds |
@@ -117,8 +118,8 @@ databricks bundle run lakebase_monitoring --only load_test,create_monitoring_vie
 ## Things to know
 
 - **Billing data lags.** Usage records reach `system.billing.usage` a few hours after the usage happens. Right
-  after the first run the cost tiles are empty; they fill in without re-running anything, because
-  `v_lakebase_cost` is a view over the system tables.
+  after the first run the cost tiles show $0 and the dashboard states that no billing records exist yet; they
+  fill in without re-running anything, because `v_lakebase_cost` is a view over the system tables.
 - **Performance views show the latest run.** `v_compute_samples`, `v_latency_*`, `v_cdf_timeseries` and the
   performance columns of `v_project_summary` are scoped to the most recent load-test run.
 - **The projects keep running.** The `production` branch suspends after 24 hours of inactivity by default, so

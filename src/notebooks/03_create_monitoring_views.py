@@ -8,6 +8,7 @@
 # MAGIC | View | Source | Grain | Used by the dashboard for |
 # MAGIC |---|---|---|---|
 # MAGIC | `v_lakebase_cost` | `system.billing.usage` × `system.billing.list_prices` | project × hour × cost type | Compute cost, storage cost |
+# MAGIC | `v_billing_status` | `v_lakebase_cost` | one row | Billing data freshness note |
 # MAGIC | `v_compute_samples` | `metrics_samples` (notebook 02) | project × sample | CU utilization, database load, CDF backlog |
 # MAGIC | `v_latency_by_op` | `query_latency` (notebook 02) | project × operation | P95 latency by operation |
 # MAGIC | `v_latency_timeseries` | `query_latency` (notebook 02) | project × 5 s | P95 latency over time |
@@ -71,6 +72,18 @@ LEFT JOIN system.billing.list_prices lp
  AND (lp.price_end_time IS NULL OR u.usage_end_time < lp.price_end_time)
 WHERE u.billing_origin_product = 'LAKEBASE'
 GROUP BY ALL
+""")
+
+# One row that says how fresh the billing data is, so an empty cost chart is never ambiguous.
+spark.sql(f"""
+CREATE OR REPLACE VIEW {MON}.v_billing_status AS
+SELECT CASE
+         WHEN count(*) = 0 THEN 'No billing records yet for these projects. Usage reaches system.billing.usage a few hours after it happens.'
+         ELSE concat('Billing records available through ', date_format(max(usage_hour) + INTERVAL 1 HOUR, 'yyyy-MM-dd HH:mm'), ' UTC')
+       END AS billing_status,
+       count(DISTINCT project_id) AS projects_with_billing,
+       coalesce(sum(list_cost_usd), 0) AS total_list_cost_usd
+FROM {MON}.v_lakebase_cost
 """)
 
 display(spark.sql(f"""
@@ -229,7 +242,9 @@ cost AS (
   FROM {MON}.v_lakebase_cost GROUP BY project_id
 )
 SELECT p.project_id, c.run_id, p.min_cu, p.max_cu,
-       b.compute_cost_usd, b.storage_cost_usd, b.compute_dbus, b.storage_dsus, b.billed_through,
+       -- 0 means nothing has been billed yet; v_billing_status says how fresh the billing data is
+       coalesce(b.compute_cost_usd, 0) AS compute_cost_usd, coalesce(b.storage_cost_usd, 0) AS storage_cost_usd,
+       coalesce(b.compute_dbus, 0) AS compute_dbus, coalesce(b.storage_dsus, 0) AS storage_dsus, b.billed_through,
        c.avg_cu_utilization, c.peak_cu_utilization, c.peak_db_load, c.peak_allocated_vcpu, c.storage_gb, c.peak_cdf_lag_mb,
        l.p95_read_ms, l.p95_update_ms, l.p95_insert_batch_ms, l.rows_ingested, l.operations,
        f.cdf_events, f.p50_cdf_latency_s, f.p95_cdf_latency_s, f.max_cdf_latency_s
@@ -246,7 +261,7 @@ display(spark.table(f"{MON}.v_project_summary").orderBy("project_id"))
 
 import json
 
-VIEWS = ["v_lakebase_cost", "cdf_events", "v_compute_samples", "v_latency_by_op", "v_latency_timeseries", "v_cdf_timeseries", "v_project_summary"]
+VIEWS = ["v_lakebase_cost", "v_billing_status", "cdf_events", "v_compute_samples", "v_latency_by_op", "v_latency_timeseries", "v_cdf_timeseries", "v_project_summary"]
 row_counts = {v: spark.table(f"{MON}.{v}").count() for v in VIEWS}
 print(row_counts)
 dbutils.notebook.exit(json.dumps(row_counts))
