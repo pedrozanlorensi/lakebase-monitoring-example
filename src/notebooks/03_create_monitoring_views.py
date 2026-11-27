@@ -11,13 +11,12 @@
 # MAGIC | `v_billing_status` | `v_lakebase_cost` | one row | Billing data freshness note |
 # MAGIC | `v_compute_samples` | `metrics_samples` (notebook 02) | project × sample | CU utilization, database load |
 # MAGIC | `v_latency_by_op` | `query_latency` (notebook 02) | project × operation | P95 latency by operation |
-# MAGIC | `v_latency_timeseries` | `query_latency` (notebook 02) | project × 5 s | P95 latency over time |
-# MAGIC | `cdf_events` | each project's `lb_orders_history` (Lakehouse Sync) | replicated change | base for the CDF views |
+# MAGIC | `cdf_events` | each project's `lb_orders_history` (Lakebase CDF) | replicated change | base for the CDF views |
 # MAGIC | `v_cdf_timeseries` | `cdf_events` | project × 5 s | CDF replication latency over time |
 # MAGIC | `v_project_summary` | all of the above | project | KPI tiles and the detail table |
 # MAGIC
 # MAGIC **Time scope.** Cost covers everything billed since each project was created. The performance views
-# MAGIC (`v_compute_samples`, `v_latency_*`, `v_cdf_timeseries`) show the **latest load-test run**.
+# MAGIC (`v_compute_samples`, `v_latency_by_op`, `v_cdf_timeseries`) show the **latest load-test run**.
 # MAGIC
 # MAGIC **Requirements.** `SELECT` on `system.billing.usage` and `system.billing.list_prices`. Billing records reach
 # MAGIC the system table a few hours after the usage happens, so the cost of a brand-new project is empty at first.
@@ -96,13 +95,22 @@ FROM {MON}.v_lakebase_cost GROUP BY ALL ORDER BY 1, 2
 
 # MAGIC %md
 # MAGIC ## CDF replication latency
+# MAGIC [Lakebase Change Data Feed](https://docs.databricks.com/aws/en/oltp/projects/lakebase-cdf) captures every insert, update and delete from the Postgres write-ahead
+# MAGIC log and stores it as a new row in a Unity Catalog managed Delta table, **batched and flushed every ~15 seconds**.
+# MAGIC Replication latency is therefore expected to range from a few seconds up to about 15 seconds, depending on
+# MAGIC where in the batch window a change was committed.
+# MAGIC
 # MAGIC `cdf_events` unions the `lb_orders_history` table of every project. For each replicated change:
 # MAGIC
-# MAGIC `replication_latency_s = _timestamp (when Lakehouse Sync processed the change) − commit time in Postgres`
+# MAGIC | Column | Definition |
+# MAGIC |---|---|
+# MAGIC | `source_ts` | Commit time in Postgres: `created_at` for inserts, `updated_at` for updates (both set with `clock_timestamp()`) |
+# MAGIC | `delta_written_at` | When the Delta data file holding the row was written (`_metadata.file_modification_time`) |
+# MAGIC | `replication_latency_s` | `delta_written_at − source_ts`: how long until the change was available in the Delta table |
+# MAGIC | `processed_at` | The feed's `_timestamp` column: when the change was processed, before the batch is flushed |
+# MAGIC | `processing_latency_s` | `processed_at − source_ts`: typically milliseconds, **not** the time to reach Delta |
 # MAGIC
-# MAGIC The Postgres commit time is `created_at` for inserts and `updated_at` for updates (both set with
-# MAGIC `clock_timestamp()`). Deletes and update pre-images carry no fresh source timestamp, so they are counted
-# MAGIC but have no latency.
+# MAGIC Deletes and update pre-images carry no fresh source timestamp, so they are counted but have no latency.
 
 # COMMAND ----------
 
@@ -110,22 +118,25 @@ selects = []
 for p in projects:
     selects.append(f"""
     SELECT '{p['project_id']}' AS project_id, id, _pg_change_type AS change_type, _pg_lsn AS pg_lsn,
-           to_timestamp(concat(date_format(_timestamp, "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"), 'Z')) AS replicated_at,
+           to_timestamp(concat(date_format(_timestamp, "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"), 'Z')) AS processed_at,
+           _metadata.file_modification_time AS delta_written_at,
            CASE _pg_change_type WHEN 'insert' THEN created_at WHEN 'update_postimage' THEN updated_at END AS source_ts
     FROM {p['uc_catalog']}.{p['uc_schema']}.lb_orders_history""")
 
 spark.sql(f"""
 CREATE OR REPLACE VIEW {MON}.cdf_events AS
-SELECT project_id, id, change_type, pg_lsn, replicated_at, source_ts,
-       (unix_micros(replicated_at) - unix_micros(source_ts)) / 1e6 AS replication_latency_s
+SELECT project_id, id, change_type, pg_lsn, source_ts, processed_at, delta_written_at,
+       (unix_micros(delta_written_at) - unix_micros(source_ts)) / 1e6 AS replication_latency_s,
+       (unix_micros(processed_at) - unix_micros(source_ts)) / 1e6 AS processing_latency_s
 FROM ({' UNION ALL '.join(selects)})
 """)
 
 display(spark.sql(f"""
 SELECT project_id, change_type, count(*) AS events,
-       round(avg(replication_latency_s), 2) AS avg_latency_s,
+       round(percentile_approx(replication_latency_s, 0.50), 2) AS p50_latency_s,
        round(percentile_approx(replication_latency_s, 0.95), 2) AS p95_latency_s,
-       round(max(replication_latency_s), 2) AS max_latency_s
+       round(max(replication_latency_s), 2) AS max_latency_s,
+       round(percentile_approx(processing_latency_s, 0.95), 3) AS p95_processing_latency_s
 FROM {MON}.cdf_events GROUP BY ALL ORDER BY 1, 2
 """))
 
@@ -180,21 +191,10 @@ GROUP BY ALL
 """)
 
 spark.sql(f"""
-CREATE OR REPLACE VIEW {MON}.v_latency_timeseries AS
-SELECT run_id, project_id,
-       timestamp_seconds(floor(unix_seconds(started_at) / 5) * 5) AS ts,
-       count(*) AS operations,
-       percentile_approx(latency_ms, 0.50) AS p50_ms,
-       percentile_approx(latency_ms, 0.95) AS p95_ms
-FROM {MON}.query_latency
-WHERE run_id = {LATEST} AND op <> 'insert_batch'
-GROUP BY ALL
-""")
-
-spark.sql(f"""
 CREATE OR REPLACE VIEW {MON}.v_cdf_timeseries AS
 SELECT project_id,
-       timestamp_seconds(floor(unix_seconds(replicated_at) / 5) * 5) AS ts,
+       -- bucketed by the commit time in Postgres
+       timestamp_seconds(floor(unix_seconds(source_ts) / 5) * 5) AS ts,
        count(*) AS events,
        avg(replication_latency_s) AS avg_latency_s,
        percentile_approx(replication_latency_s, 0.50) AS p50_latency_s,
@@ -202,7 +202,7 @@ SELECT project_id,
        max(replication_latency_s) AS max_latency_s
 FROM {MON}.cdf_events
 WHERE replication_latency_s IS NOT NULL
-  AND replicated_at >= (SELECT min(sampled_at) FROM {MON}.metrics_samples WHERE run_id = {LATEST})
+  AND source_ts >= (SELECT min(sampled_at) FROM {MON}.metrics_samples WHERE run_id = {LATEST})
 GROUP BY ALL
 """)
 
@@ -232,7 +232,7 @@ cdf AS (
          max(replication_latency_s) AS max_cdf_latency_s
   FROM {MON}.cdf_events
   WHERE replication_latency_s IS NOT NULL
-    AND replicated_at >= (SELECT min(sampled_at) FROM {MON}.metrics_samples WHERE run_id = {LATEST})
+    AND source_ts >= (SELECT min(sampled_at) FROM {MON}.metrics_samples WHERE run_id = {LATEST})
   GROUP BY project_id
 ),
 cost AS (
@@ -264,7 +264,7 @@ display(spark.table(f"{MON}.v_project_summary").orderBy("project_id"))
 
 import json
 
-VIEWS = ["v_lakebase_cost", "v_billing_status", "cdf_events", "v_compute_samples", "v_latency_by_op", "v_latency_timeseries", "v_cdf_timeseries", "v_project_summary"]
+VIEWS = ["v_lakebase_cost", "v_billing_status", "cdf_events", "v_compute_samples", "v_latency_by_op", "v_cdf_timeseries", "v_project_summary"]
 row_counts = {v: spark.table(f"{MON}.{v}").count() for v in VIEWS}
 print(row_counts)
 dbutils.notebook.exit(json.dumps(row_counts))

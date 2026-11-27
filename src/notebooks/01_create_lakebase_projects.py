@@ -3,7 +3,7 @@
 # MAGIC # 01 · Create Lakebase projects with CDF enabled
 # MAGIC
 # MAGIC Creates N Lakebase Autoscaling projects (default 5), a load-test table in each one,
-# MAGIC and turns on **Lakehouse Sync (CDF)** so every change in Postgres is replicated to a
+# MAGIC and turns on **[Lakebase Change Data Feed](https://docs.databricks.com/aws/en/oltp/projects/lakebase-cdf) (CDF)** so every change in Postgres is replicated to a
 # MAGIC Delta history table in Unity Catalog.
 # MAGIC
 # MAGIC | Step | What it does |
@@ -141,7 +141,7 @@ with ThreadPoolExecutor(max_workers=NUM_PROJECTS) as pool:
 
 # MAGIC %md
 # MAGIC ## 2 · Create the load-test table
-# MAGIC `REPLICA IDENTITY FULL` is required by Lakehouse Sync. Column types are limited to the ones CDF supports.
+# MAGIC `REPLICA IDENTITY FULL` is required by Lakebase CDF. Column types are limited to the ones CDF supports.
 
 # COMMAND ----------
 
@@ -192,7 +192,7 @@ for info in setup_results:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 3 · Enable CDF (Lakehouse Sync) per project
+# MAGIC ## 3 · Enable Lakebase CDF per project
 # MAGIC Each project replicates into its own UC schema, because every project produces a table with the same
 # MAGIC name (`lb_orders_history`).
 
@@ -284,7 +284,7 @@ display(spark.table(f"{CATALOG}.{MON_SCHEMA}.projects"))
 
 # MAGIC %md
 # MAGIC ## Verify CDF from the Postgres side
-# MAGIC `wal2delta.tables` lists the tables Lakehouse Sync is tracking in each project.
+# MAGIC `wal2delta.tables` lists the tables Lakebase CDF is tracking in each project.
 
 # COMMAND ----------
 

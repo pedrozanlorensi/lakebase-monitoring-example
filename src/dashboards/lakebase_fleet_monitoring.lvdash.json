@@ -36,13 +36,6 @@
       ]
     },
     {
-      "name": "ds_latency_ts",
-      "displayName": "Latency over time",
-      "queryLines": [
-        "SELECT * FROM v_latency_timeseries ORDER BY ts "
-      ]
-    },
-    {
       "name": "ds_cdf_ts",
       "displayName": "CDF replication latency over time",
       "queryLines": [
@@ -132,19 +125,6 @@
                 }
               },
               {
-                "name": "q_ds_latency_ts",
-                "query": {
-                  "datasetName": "ds_latency_ts",
-                  "fields": [
-                    {
-                      "name": "project_id",
-                      "expression": "`project_id`"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              },
-              {
                 "name": "q_ds_cdf_ts",
                 "query": {
                   "datasetName": "ds_cdf_ts",
@@ -182,11 +162,6 @@
                     "fieldName": "project_id",
                     "displayName": "Project",
                     "queryName": "q_ds_latency_op"
-                  },
-                  {
-                    "fieldName": "project_id",
-                    "displayName": "Project",
-                    "queryName": "q_ds_latency_ts"
                   },
                   {
                     "fieldName": "project_id",
@@ -435,7 +410,7 @@
                     "type": "number",
                     "decimalPlaces": {
                       "type": "max",
-                      "places": 2
+                      "places": 1
                     }
                   }
                 }
@@ -444,7 +419,7 @@
                 "showTitle": true,
                 "title": "CDF replication latency",
                 "showDescription": true,
-                "description": "P95 seconds, slowest project"
+                "description": "P95 seconds to Delta, slowest project"
               }
             }
           },
@@ -865,81 +840,7 @@
           "position": {
             "x": 0,
             "y": 19,
-            "width": 6,
-            "height": 5
-          }
-        },
-        {
-          "widget": {
-            "name": "db_load",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_compute",
-                  "fields": [
-                    {
-                      "name": "ts",
-                      "expression": "`ts`"
-                    },
-                    {
-                      "name": "project_id",
-                      "expression": "`project_id`"
-                    },
-                    {
-                      "name": "avg(db_load)",
-                      "expression": "AVG(`db_load`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "line",
-              "encodings": {
-                "x": {
-                  "fieldName": "ts",
-                  "displayName": "Time",
-                  "scale": {
-                    "type": "temporal"
-                  }
-                },
-                "y": {
-                  "fieldName": "avg(db_load)",
-                  "displayName": "Busy sessions",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "format": {
-                    "type": "number",
-                    "decimalPlaces": {
-                      "type": "max",
-                      "places": 2
-                    }
-                  }
-                },
-                "color": {
-                  "fieldName": "project_id",
-                  "displayName": "Project",
-                  "scale": {
-                    "type": "categorical"
-                  }
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Database load over time",
-                "showDescription": true,
-                "description": "Seconds of statement execution per second (busy sessions)"
-              }
-            }
-          },
-          "position": {
-            "x": 6,
-            "y": 19,
-            "width": 6,
+            "width": 12,
             "height": 5
           }
         },
@@ -1032,81 +933,7 @@
           "position": {
             "x": 0,
             "y": 25,
-            "width": 6,
-            "height": 5
-          }
-        },
-        {
-          "widget": {
-            "name": "p95_ts",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_latency_ts",
-                  "fields": [
-                    {
-                      "name": "ts",
-                      "expression": "`ts`"
-                    },
-                    {
-                      "name": "project_id",
-                      "expression": "`project_id`"
-                    },
-                    {
-                      "name": "max(p95_ms)",
-                      "expression": "MAX(`p95_ms`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "line",
-              "encodings": {
-                "x": {
-                  "fieldName": "ts",
-                  "displayName": "Time",
-                  "scale": {
-                    "type": "temporal"
-                  }
-                },
-                "y": {
-                  "fieldName": "max(p95_ms)",
-                  "displayName": "P95 latency (ms)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "format": {
-                    "type": "number",
-                    "decimalPlaces": {
-                      "type": "max",
-                      "places": 1
-                    }
-                  }
-                },
-                "color": {
-                  "fieldName": "project_id",
-                  "displayName": "Project",
-                  "scale": {
-                    "type": "categorical"
-                  }
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "P95 latency over time",
-                "showDescription": true,
-                "description": "5-second buckets, reads, updates and deletes"
-              }
-            }
-          },
-          "position": {
-            "x": 6,
-            "y": 25,
-            "width": 6,
+            "width": 12,
             "height": 5
           }
         },
@@ -1115,7 +942,9 @@
             "name": "h_cdf",
             "multilineTextboxSpec": {
               "lines": [
-                "### CDF replication\n"
+                "### CDF replication\n",
+                "\n",
+                "Lakebase Change Data Feed captures every insert, update and delete from the write-ahead log and stores it as a new row in a Unity Catalog managed Delta table, batched and flushed every ~15 seconds. Replication latency is the time from the commit in Postgres until the change is written to the Delta table. Reference: [Lakebase Change Data Feed](https://docs.databricks.com/aws/en/oltp/projects/lakebase-cdf)."
               ]
             }
           },
@@ -1123,7 +952,7 @@
             "x": 0,
             "y": 30,
             "width": 12,
-            "height": 1
+            "height": 2
           }
         },
         {
@@ -1189,13 +1018,13 @@
                 "showTitle": true,
                 "title": "CDF replication latency over time",
                 "showDescription": true,
-                "description": "Median and P95 per 5-second bucket, slowest selected project. Postgres commit → change processed by Lakehouse Sync"
+                "description": "Median and P95 by commit time (5-second buckets), slowest selected project. Postgres commit → written to the Delta table"
               }
             }
           },
           "position": {
             "x": 0,
-            "y": 31,
+            "y": 32,
             "width": 12,
             "height": 5
           }
@@ -1211,7 +1040,7 @@
           },
           "position": {
             "x": 0,
-            "y": 36,
+            "y": 37,
             "width": 12,
             "height": 1
           }
@@ -1459,7 +1288,7 @@
           },
           "position": {
             "x": 0,
-            "y": 37,
+            "y": 38,
             "width": 12,
             "height": 6
           }
