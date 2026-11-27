@@ -46,7 +46,7 @@
       "name": "ds_cdf_ts",
       "displayName": "CDF replication latency over time",
       "queryLines": [
-        "SELECT * FROM v_cdf_timeseries ORDER BY ts "
+        "SELECT project_id, ts, 'Median' AS percentile, p50_latency_s AS latency_s FROM v_cdf_timeseries UNION ALL SELECT project_id, ts, 'P95' AS percentile, p95_latency_s AS latency_s FROM v_cdf_timeseries ORDER BY ts "
       ]
     }
   ],
@@ -1128,7 +1128,7 @@
         },
         {
           "widget": {
-            "name": "cdf_p95_ts",
+            "name": "cdf_latency_ts",
             "queries": [
               {
                 "name": "main_query",
@@ -1140,12 +1140,12 @@
                       "expression": "`ts`"
                     },
                     {
-                      "name": "project_id",
-                      "expression": "`project_id`"
+                      "name": "percentile",
+                      "expression": "`percentile`"
                     },
                     {
-                      "name": "max(p95_latency_s)",
-                      "expression": "MAX(`p95_latency_s`)"
+                      "name": "max(latency_s)",
+                      "expression": "MAX(`latency_s`)"
                     }
                   ],
                   "disaggregated": false
@@ -1164,8 +1164,8 @@
                   }
                 },
                 "y": {
-                  "fieldName": "max(p95_latency_s)",
-                  "displayName": "P95 latency (s)",
+                  "fieldName": "max(latency_s)",
+                  "displayName": "Replication latency (s)",
                   "scale": {
                     "type": "quantitative"
                   },
@@ -1178,8 +1178,8 @@
                   }
                 },
                 "color": {
-                  "fieldName": "project_id",
-                  "displayName": "Project",
+                  "fieldName": "percentile",
+                  "displayName": "Percentile",
                   "scale": {
                     "type": "categorical"
                   }
@@ -1189,7 +1189,7 @@
                 "showTitle": true,
                 "title": "CDF replication latency over time",
                 "showDescription": true,
-                "description": "Postgres commit → change processed by Lakehouse Sync, 5-second buckets"
+                "description": "Median and P95 per 5-second bucket, slowest selected project. Postgres commit → change processed by Lakehouse Sync"
               }
             }
           },

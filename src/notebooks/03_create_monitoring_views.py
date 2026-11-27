@@ -195,6 +195,7 @@ SELECT project_id,
        timestamp_seconds(floor(unix_seconds(replicated_at) / 5) * 5) AS ts,
        count(*) AS events,
        avg(replication_latency_s) AS avg_latency_s,
+       percentile_approx(replication_latency_s, 0.50) AS p50_latency_s,
        percentile_approx(replication_latency_s, 0.95) AS p95_latency_s,
        max(replication_latency_s) AS max_latency_s
 FROM {MON}.cdf_events
