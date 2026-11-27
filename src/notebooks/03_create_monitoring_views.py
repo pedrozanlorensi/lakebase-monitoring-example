@@ -9,7 +9,7 @@
 # MAGIC |---|---|---|---|
 # MAGIC | `v_lakebase_cost` | `system.billing.usage` × `system.billing.list_prices` | project × hour × cost type | Compute cost, storage cost |
 # MAGIC | `v_billing_status` | `v_lakebase_cost` | one row | Billing data freshness note |
-# MAGIC | `v_compute_samples` | `metrics_samples` (notebook 02) | project × sample | CU utilization, database load, CDF backlog |
+# MAGIC | `v_compute_samples` | `metrics_samples` (notebook 02) | project × sample | CU utilization, database load |
 # MAGIC | `v_latency_by_op` | `query_latency` (notebook 02) | project × operation | P95 latency by operation |
 # MAGIC | `v_latency_timeseries` | `query_latency` (notebook 02) | project × 5 s | P95 latency over time |
 # MAGIC | `cdf_events` | each project's `lb_orders_history` (Lakehouse Sync) | replicated change | base for the CDF views |
@@ -156,6 +156,8 @@ d AS (
   FROM s WHERE prev_ts IS NOT NULL
 )
 SELECT run_id, project_id, sampled_at,
+       -- 10-second bucket shared by all projects, so their series line up on the same x values in charts
+       timestamp_seconds(floor(unix_seconds(sampled_at) / 10) * 10) AS ts,
        num_cpus AS allocated_vcpu, min_cu, max_cu,
        (active_time_ms - prev_active_ms) / 1000 / interval_s AS db_load,
        least(1.0, (active_time_ms - prev_active_ms) / 1000 / interval_s / num_cpus) AS cu_utilization,

@@ -25,7 +25,7 @@
       "name": "ds_compute",
       "displayName": "Compute samples",
       "queryLines": [
-        "SELECT * FROM v_compute_samples ORDER BY sampled_at "
+        "SELECT project_id, ts, avg(cu_utilization) AS cu_utilization, avg(db_load) AS db_load FROM v_compute_samples GROUP BY project_id, ts ORDER BY ts "
       ]
     },
     {
@@ -805,8 +805,8 @@
                   "datasetName": "ds_compute",
                   "fields": [
                     {
-                      "name": "sampled_at",
-                      "expression": "`sampled_at`"
+                      "name": "ts",
+                      "expression": "`ts`"
                     },
                     {
                       "name": "project_id",
@@ -826,7 +826,7 @@
               "widgetType": "line",
               "encodings": {
                 "x": {
-                  "fieldName": "sampled_at",
+                  "fieldName": "ts",
                   "displayName": "Time",
                   "scale": {
                     "type": "temporal"
@@ -879,8 +879,8 @@
                   "datasetName": "ds_compute",
                   "fields": [
                     {
-                      "name": "sampled_at",
-                      "expression": "`sampled_at`"
+                      "name": "ts",
+                      "expression": "`ts`"
                     },
                     {
                       "name": "project_id",
@@ -900,7 +900,7 @@
               "widgetType": "line",
               "encodings": {
                 "x": {
-                  "fieldName": "sampled_at",
+                  "fieldName": "ts",
                   "displayName": "Time",
                   "scale": {
                     "type": "temporal"
@@ -1196,81 +1196,7 @@
           "position": {
             "x": 0,
             "y": 31,
-            "width": 6,
-            "height": 5
-          }
-        },
-        {
-          "widget": {
-            "name": "cdf_lag",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_compute",
-                  "fields": [
-                    {
-                      "name": "sampled_at",
-                      "expression": "`sampled_at`"
-                    },
-                    {
-                      "name": "project_id",
-                      "expression": "`project_id`"
-                    },
-                    {
-                      "name": "max(cdf_lag_mb)",
-                      "expression": "MAX(`cdf_lag_mb`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "line",
-              "encodings": {
-                "x": {
-                  "fieldName": "sampled_at",
-                  "displayName": "Time",
-                  "scale": {
-                    "type": "temporal"
-                  }
-                },
-                "y": {
-                  "fieldName": "max(cdf_lag_mb)",
-                  "displayName": "WAL lag (MB)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "format": {
-                    "type": "number",
-                    "decimalPlaces": {
-                      "type": "max",
-                      "places": 1
-                    }
-                  }
-                },
-                "color": {
-                  "fieldName": "project_id",
-                  "displayName": "Project",
-                  "scale": {
-                    "type": "categorical"
-                  }
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "CDF backlog over time",
-                "showDescription": true,
-                "description": "WAL not yet committed by Lakehouse Sync"
-              }
-            }
-          },
-          "position": {
-            "x": 6,
-            "y": 31,
-            "width": 6,
+            "width": 12,
             "height": 5
           }
         },
