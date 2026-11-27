@@ -11,7 +11,7 @@
       "name": "ds_cost",
       "displayName": "Lakebase cost (system.billing)",
       "queryLines": [
-        "SELECT * FROM v_lakebase_cost ORDER BY usage_hour "
+        "SELECT project_id, usage_hour, cost_type, sum(usage_quantity) AS usage_quantity, sum(list_cost_usd) AS list_cost_usd FROM v_lakebase_cost GROUP BY project_id, usage_hour, cost_type ORDER BY usage_hour "
       ]
     },
     {
@@ -714,8 +714,8 @@
                   "datasetName": "ds_cost",
                   "fields": [
                     {
-                      "name": "usage_hour",
-                      "expression": "`usage_hour`"
+                      "name": "hourly(usage_hour)",
+                      "expression": "DATE_TRUNC(\"HOUR\", `usage_hour`)"
                     },
                     {
                       "name": "cost_type",
@@ -735,7 +735,7 @@
               "widgetType": "bar",
               "encodings": {
                 "x": {
-                  "fieldName": "usage_hour",
+                  "fieldName": "hourly(usage_hour)",
                   "displayName": "Hour",
                   "scale": {
                     "type": "temporal"

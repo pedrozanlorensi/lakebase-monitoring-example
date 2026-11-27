@@ -61,8 +61,8 @@ SELECT p.project_id,
        coalesce(u.product_features.lakebase.compute_type, u.product_features.lakebase.storage_type) AS usage_detail,
        u.sku_name,
        u.usage_unit,
-       sum(u.usage_quantity) AS usage_quantity,
-       sum(u.usage_quantity * lp.pricing.effective_list.default) AS list_cost_usd
+       CAST(sum(u.usage_quantity) AS DOUBLE) AS usage_quantity,
+       CAST(sum(u.usage_quantity * lp.pricing.effective_list.default) AS DOUBLE) AS list_cost_usd
 FROM system.billing.usage u
 JOIN {MON}.projects p
   ON u.usage_metadata.project_id = p.project_uid AND u.workspace_id = p.workspace_id
